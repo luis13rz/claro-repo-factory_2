@@ -1,0 +1,56 @@
+# Crea el repo cuando un aprobador agrega la etiqueta `aprobado`. Un solo job a la vez.
+name: create-repo
+
+on:
+  issues:
+    types: [labeled]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: repo-factory-create
+  cancel-in-progress: false
+
+jobs:
+  create:
+    if: github.event.label.name == 'aprobado' && contains(github.event.issue.labels.*.name, 'solicitud-repo')
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment: repo-factory
+    steps:
+      - uses: actions/create-github-app-token@v1   # pinear a SHA de commit en producción
+        id: app
+        with:
+          app-id: ${{ vars.FACTORY_APP_ID }}
+          private-key: ${{ secrets.FACTORY_APP_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ steps.app.outputs.token }}   # la App empuja el catálogo (debe poder saltarse la protección de main)
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install -e .
+      - name: Autorizar, revalidar y crear el repo
+        id: create
+        run: python -m repo_factory create
+        env:
+          GH_TOKEN: ${{ steps.app.outputs.token }}
+      - name: Registrar en el catálogo
+        if: steps.create.outputs.created == 'true'
+        env:
+          ISSUE: ${{ github.event.issue.number }}
+        run: |
+          set -euo pipefail
+          git config user.name "claro-repo-factory[bot]"
+          git config user.email "repo-factory@users.noreply.github.com"
+          git add catalog/jobs.yaml
+          git commit -m "catalog: registra el repo de la solicitud #${ISSUE}"
+          git pull --rebase --quiet
+          git push
+      - name: Cerrar la solicitud
+        if: steps.create.outputs.created == 'true'
+        run: python -m repo_factory close
+        env:
+          GH_TOKEN: ${{ steps.app.outputs.token }}

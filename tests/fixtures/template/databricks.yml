@@ -1,0 +1,36 @@
+# Bundle mínimo y estándar. El job vive en resources/job.generated.yml (generado por el pipeline).
+bundle:
+  name: mi-job-ejemplo   # <- debe coincidir con job.name; se fija al crear el repo desde la plantilla
+
+include:
+  - resources/*.yml
+
+variables:
+  run_as_sp:
+    description: Application ID del service principal que ejecuta el job (lo inyecta el pipeline)
+
+run_as:
+  service_principal_name: ${var.run_as_sp}
+
+sync:
+  include:
+    - build/platform/**     # notebooks genéricos de plataforma copiados en el build
+  exclude:
+    - tests/**
+    - .github/**
+    - .platform-src/**
+
+targets:
+  dev:
+    default: true
+    workspace:
+      root_path: /Workspace/Shared/.bundle/${bundle.name}/${bundle.target}
+
+  qa:                       # preparado para el futuro: no se despliega mientras qa no esté en environments.yaml
+    workspace:
+      root_path: /Workspace/Shared/.bundle/${bundle.name}/${bundle.target}
+
+  prod:
+    mode: production
+    workspace:
+      root_path: /Workspace/Shared/.bundle/${bundle.name}/${bundle.target}

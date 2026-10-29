@@ -1,0 +1,51 @@
+# Única fuente de verdad del job. El pipeline central genera el Workflow de Databricks a partir de este archivo.
+# No definas clusters, pool ids, identidades de ejecución ni credenciales aquí: los pone la plataforma.
+version: 1
+
+job:
+  name: mi-job-ejemplo                 # kebab-case; debe coincidir con bundle.name en databricks.yml
+  description: Cierre mensual de ejemplo (reemplazar por la descripción real del proceso)
+  owner_team: oficina-de-datos
+  cost_center: CC-0000
+  timezone: America/Guatemala
+  period_mode: previous_month          # previous_month | current_day | none
+  max_concurrent_runs: 1
+  timeout_seconds: 14400
+
+  cluster:
+    size: M                            # talla lógica; el pool se resuelve en la tabla de Unity Catalog
+
+  schedule:
+    cron: "0 0 6 1 * ?"                # Quartz: 06:00 el día 1 de cada mes
+    # paused_in: [dev]                 # opcional; por defecto el schedule queda pausado fuera de producción
+
+  notifications:
+    on_failure: [datos-alertas@claro.com.gt]   # usar listas de distribución, no correos personales
+
+  permissions:
+    can_view: [grp-datos-analistas]
+    can_manage_run: [grp-datos-operacion]
+
+  parameters:                          # llegan como widgets a todos los notebooks
+    pais_objetivo: "ALL"
+
+  quality_gate:                        # opcional: validación de datos antes de procesar
+    max_retries: 6
+    retry_interval_minutes: 60
+    timeout_day_of_month: 10
+    checks:
+      - name: tabla_ejemplo
+        table: catalogo.esquema.tabla_ejemplo
+        group_column: idpais
+        period: { type: yyyymm_int, column: periodo }
+        minimums:                      # mínimo de registros por grupo (valores de ejemplo)
+          "502": 1000
+          "503": 1000
+
+tasks:
+  - key: proceso_principal
+    notebook: src/notebooks/main.py
+    parameters:
+      salida: catalogo.esquema.tabla_salida
+    max_retries: 1
+    # pypi_libraries: ["pandas==2.2.2"]   # solo versiones fijadas

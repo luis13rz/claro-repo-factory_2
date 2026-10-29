@@ -1,0 +1,40 @@
+# Valida cada solicitud de repo y responde en el mismo issue. No crea nada.
+# Los workflows disparados por `issues` corren desde la rama por defecto, por eso los secretos del Environment
+# `repo-factory` (restringido a la rama main) no están al alcance de quien abre el issue.
+name: validate-request
+
+on:
+  issues:
+    types: [opened, edited, reopened]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: repo-request-${{ github.event.issue.number }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    if: contains(github.event.issue.labels.*.name, 'solicitud-repo')
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment: repo-factory
+    steps:
+      - uses: actions/create-github-app-token@v1   # pinear a SHA de commit en producción
+        id: app
+        with:
+          app-id: ${{ vars.FACTORY_APP_ID }}
+          private-key: ${{ secrets.FACTORY_APP_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install -e .
+      # El contenido del issue NUNCA se interpola en comandos: el programa lo lee del JSON del evento.
+      - run: python -m repo_factory validate
+        env:
+          GH_TOKEN: ${{ steps.app.outputs.token }}
