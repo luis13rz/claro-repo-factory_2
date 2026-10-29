@@ -1,0 +1,31 @@
+# Convenciones del servicio de creación de repos. Cambiar una convención = editar este archivo (con PR revisado).
+org: ClaroCENAM
+template_repo: template-databricks-job     # repo plantilla (marcado como "Template repository"); su rama por defecto es `dev`
+
+# --- nombre ---
+repo_prefix: "job-"                        # repo = job-<nombre-del-job>  (ej. job-parque-imei-regional)
+reserved_names: [template, test, tests, demo, example, ejemplo, prueba, platform, plataforma, tmp, temp]
+
+# --- ramas y ambientes ---
+default_branch: dev
+branches: [dev, prod]                      # ramas de ambiente (en minúsculas) = environments.yaml del repo de plataforma
+workspace_root: /Workspace/Shared/jobs     # ruta de despliegue: <raíz>/<equipo-dueño>/<job>/<ambiente>
+
+# --- equipos (slugs de GitHub) ---
+platform_team: platform-team               # admin de todos los repos; revisor de CODEOWNERS
+approver_teams: [platform-team]            # quién puede agregar la etiqueta `aprobado`
+approval_environments: [prod]              # GitHub Environments que exigen aprobación manual (deben ser ramas de ambiente)
+prod_reviewer_teams: [platform-team]       # revisores de esos Environments
+forbid_self_approval: true                 # quien solicita no puede aprobar su propia solicitud
+
+# --- protección de ramas ---
+# Nombre del check tal como lo muestra GitHub para el workflow reutilizable: "<job del llamador> / <job reutilizable>".
+# VALIDAR en el piloto contra un PR real.
+required_checks: ["pipeline / quality"]
+required_approvals: 1
+
+# --- valores permitidos en el formulario ---
+cluster_sizes: [XS, S, M, L, XL]           # deben existir en la tabla cluster_pools de Unity Catalog
+period_modes: [previous_month, current_day, none]
+email_domains: [claro.com.gt]
+max_alert_emails: 5
