@@ -1,0 +1,5 @@
+# El equipo de plataforma controla el pipeline y el bundle; el equipo dueño controla su lógica.
+/.github/         @ClaroCENAM/platform-team
+/databricks.yml   @ClaroCENAM/platform-team
+/job.config.yaml  @ClaroCENAM/platform-team @ClaroCENAM/oficina-de-datos
+/src/             @ClaroCENAM/oficina-de-datos

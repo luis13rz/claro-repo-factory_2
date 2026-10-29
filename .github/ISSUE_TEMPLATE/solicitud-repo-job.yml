@@ -1,0 +1,100 @@
+name: Solicitud de repo para un job de Databricks
+description: Pide la creación estandarizada de un repositorio para un job (nombre, estructura y protecciones ya configuradas).
+title: "[Repo] <nombre-del-job>"
+labels: ["solicitud-repo"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Completa todos los campos. Un validador revisará los datos y te responderá en este mismo issue.
+        Un aprobador del equipo de plataforma autoriza la creación; luego el repo se crea solo.
+        **Las etiquetas del formulario no deben editarse**: el validador las usa para leer tus respuestas.
+
+  - type: input
+    id: job_name
+    attributes:
+      label: Nombre del job
+      description: "kebab-case, minúsculas, 3 a 50 caracteres. El repo se llamará job-<nombre>."
+      placeholder: parque-imei-regional
+    validations:
+      required: true
+
+  - type: input
+    id: owner_team
+    attributes:
+      label: Equipo dueño (slug del equipo de GitHub)
+      description: Debe existir como equipo en la organización de GitHub. Será dueño del código.
+      placeholder: oficina-de-datos
+    validations:
+      required: true
+
+  - type: input
+    id: cost_center
+    attributes:
+      label: Centro de costo
+      placeholder: CC-1234
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Descripción
+      description: Qué hace el job, en una o dos frases (10 a 500 caracteres, sin saltos de línea).
+    validations:
+      required: true
+
+  - type: dropdown
+    id: cluster_size
+    attributes:
+      label: Talla de cluster
+      description: Talla lógica; el pool real se resuelve en Unity Catalog por ambiente.
+      options: [XS, S, M, L, XL]
+    validations:
+      required: true
+
+  - type: dropdown
+    id: period_mode
+    attributes:
+      label: Modo de periodo
+      description: "previous_month = cierre mensual idempotente; current_day = diario; none = siempre corre."
+      options: [previous_month, current_day, none]
+    validations:
+      required: true
+
+  - type: input
+    id: schedule_cron
+    attributes:
+      label: Schedule (cron Quartz, opcional)
+      description: 'Déjalo vacío si el job no tiene schedule. Ejemplo: "0 0 6 1 * ?" = 06:00 el día 1 de cada mes.'
+    validations:
+      required: false
+
+  - type: input
+    id: alert_emails
+    attributes:
+      label: Correos de alerta
+      description: Listas de distribución del dominio corporativo, separadas por coma (máximo 5). No uses correos personales.
+      placeholder: datos-alertas@claro.com.gt
+    validations:
+      required: true
+
+  - type: input
+    id: tech_lead
+    attributes:
+      label: Responsable técnico (usuario de GitHub)
+      description: Usuario de GitHub sin @. Debe pertenecer al equipo dueño.
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: confirmations
+    attributes:
+      label: Confirmaciones
+      options:
+        - label: Revisé los lineamientos de desarrollo para ingenieros de datos.
+          required: true
+        - label: El nombre y el equipo dueño son correctos; entiendo que cambiarlos después requiere recrear el repo.
+          required: true
+        - label: No incluiré secretos, credenciales ni correos personales en el código ni en la configuración.
+          required: true
